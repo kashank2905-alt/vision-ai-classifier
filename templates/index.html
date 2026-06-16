@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intelligent Waste Classifier
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .image-glow { box-shadow: 0 0 20px rgba(59, 130, 246, 0.5); }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex items-center justify-center p-6 font-sans antialiased selection:bg-blue-500 selection:text-white">
+
+    <div class="max-w-5xl w-full">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-teal-400 tracking-tight mb-4">
+                Intelligent Waste Classifier
+            </h1>
+            <p class="text-slate-400 text-lg">AI that figures out if something is a solid, liquid, or gas.</p>
+        </header>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div class="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col items-center transition-all duration-300 hover:border-blue-500/50">
+                <h2 class="text-xl font-semibold text-slate-200 mb-6 self-start flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                    Input Source
+                </h2>
+                
+                <div class="w-full border-2 border-dashed border-slate-600 rounded-2xl p-6 flex flex-col items-center justify-center transition-colors">
+                    
+                    <div id="action-buttons" class="flex gap-4 w-full mb-4">
+                        <button id="upload-btn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            Upload File
+                        </button>
+                        <button id="camera-btn" class="flex-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 hover:bg-blue-600/30 font-medium py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Open Camera
+                        </button>
+                    </div>
+
+                    <input type="file" id="image-upload" accept="image/*" class="hidden">
+
+                    <div id="camera-container" class="hidden w-full flex flex-col items-center">
+                        <video id="camera-stream" autoplay playsinline class="w-full h-48 object-cover rounded-xl image-glow border border-slate-600 bg-black"></video>
+                        <button id="capture-btn" class="mt-4 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-xl shadow-lg transition-all">
+                            📸 Capture Photo
+                        </button>
+                    </div>
+
+                    <canvas id="canvas" class="hidden"></canvas>
+
+                    <div id="image-preview-container" class="hidden w-full mt-2 relative">
+                        <img id="image-preview" src="" alt="Preview" class="w-full h-48 object-cover rounded-xl image-glow border border-slate-600">
+                        <button id="reset-btn" class="absolute top-2 right-2 bg-slate-900/80 text-white p-1 rounded-md text-xs hover:bg-red-500 transition-colors">✕</button>
+                    </div>
+                </div>
+                
+                <button id="run-btn" disabled class="mt-6 w-full bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-500 hover:to-teal-400 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none">
+                    Initialize Analysis
+                </button>
+            </div>
+            
+            <div class="bg-slate-800/50 backdrop-blur-lg border border-slate-700 rounded-3xl p-8 shadow-2xl flex flex-col relative overflow-hidden">
+                <div class="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-blue-500/10 blur-3xl"></div>
+
+                <h2 class="text-xl font-semibold text-slate-200 mb-6 flex items-center gap-2 relative z-10">
+                    <svg class="w-5 h-5 text-teal-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                    Analysis Output
+                </h2>
+                
+                <div id="idle-msg" class="flex-grow flex items-center justify-center text-slate-500 italic relative z-10">
+                    Awaiting visual input data...
+                </div>
+                
+                <div id="results-box" class="hidden flex-grow flex flex-col justify-center space-y-4 relative z-10">
+                    <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-2xl flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Detected Class</span>
+                        <span id="res-label" class="font-mono text-2xl text-teal-400 font-bold tracking-tight">-</span>
+                    </div>
+                    
+                    <div class="bg-slate-900/80 border border-slate-700 p-5 rounded-2xl flex justify-between items-center">
+                        <span class="text-slate-400 font-medium">Match Probability</span>
+                        <span id="res-confidence" class="font-mono text-2xl text-blue-400 font-bold">-</span>
+                    </div>
+
+                    <div id="res-msg" class="mt-4 text-center text-emerald-400 text-sm font-medium bg-emerald-400/10 py-2 rounded-lg"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadBtn = document.getElementById('upload-btn');
+        const cameraBtn = document.getElementById('camera-btn');
+        const imageUpload = document.getElementById('image-upload');
+        const actionButtons = document.getElementById('action-buttons');
+        
+        const cameraContainer = document.getElementById('camera-container');
+        const cameraStream = document.getElementById('camera-stream');
+        const captureBtn = document.getElementById('capture-btn');
+        const canvas = document.getElementById('canvas');
+        
+        const previewContainer = document.getElementById('image-preview-container');
+        const imagePreview = document.getElementById('image-preview');
+        const resetBtn = document.getElementById('reset-btn');
+        const runBtn = document.getElementById('run-btn');
+        
+        let videoStream = null;
+        let finalImageFile = null; // Store the final file (from upload or camera)
+
+        // 1. Handle File Upload
+        uploadBtn.addEventListener('click', () => imageUpload.click());
+
+        imageUpload.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                finalImageFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    showPreview(e.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // 2. Handle Live Camera
+        cameraBtn.addEventListener('click', async () => {
+            try {
+                // Request camera access (prefer back camera on mobile)
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                cameraStream.srcObject = videoStream;
+                
+                actionButtons.classList.add('hidden');
+                cameraContainer.classList.remove('hidden');
+                cameraContainer.classList.add('flex');
+            } catch (err) {
+                alert("Camera access denied or not available. Please use the Upload File option.");
+                console.error(err);
+            }
+        });
+
+        captureBtn.addEventListener('click', () => {
+            // Draw video frame to canvas
+            canvas.width = cameraStream.videoWidth;
+            canvas.height = cameraStream.videoHeight;
+            canvas.getContext('2d').drawImage(cameraStream, 0, 0);
+            
+            // Convert to image data
+            const dataUrl = canvas.toDataURL('image/jpeg');
+            
+            // Stop camera hardware
+            videoStream.getTracks().forEach(track => track.stop());
+            
+            // Convert data URL to File object for backend
+            fetch(dataUrl)
+                .then(res => res.blob())
+                .then(blob => {
+                    finalImageFile = new File([blob], "camera_capture.jpg", { type: "image/jpeg" });
+                    showPreview(dataUrl);
+                });
+        });
+
+        // 3. Helper to show preview and reset UI
+        function showPreview(src) {
+            actionButtons.classList.add('hidden');
+            cameraContainer.classList.add('hidden');
+            cameraContainer.classList.remove('flex');
+            
+            imagePreview.src = src;
+            previewContainer.classList.remove('hidden');
+            runBtn.disabled = false;
+            document.getElementById('idle-msg').textContent = "Visual data loaded. Ready to analyze!";
+        }
+
+        resetBtn.addEventListener('click', () => {
+            finalImageFile = null;
+            imageUpload.value = '';
+            previewContainer.classList.add('hidden');
+            actionButtons.classList.remove('hidden');
+            runBtn.disabled = true;
+            document.getElementById('idle-msg').textContent = "Awaiting visual input data...";
+            document.getElementById('results-box').classList.add('hidden');
+            document.getElementById('idle-msg').classList.remove('hidden');
+        });
+
+        // 4. Send to Python Backend
+        runBtn.addEventListener('click', async () => {
+            if (!finalImageFile) return;
+
+            const formData = new FormData();
+            formData.append('image', finalImageFile);
+
+            const idleMsg = document.getElementById('idle-msg');
+            const resultsBox = document.getElementById('results-box');
+            
+            runBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing...';
+            runBtn.disabled = true;
+            
+            idleMsg.classList.add('hidden');
+            resultsBox.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/classify-image', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                
+                resultsBox.classList.remove('hidden');
+                
+                document.getElementById('res-label').textContent = data.label;
+                document.getElementById('res-confidence').textContent = data.confidence;
+                document.getElementById('res-msg').textContent = data.message;
+            } catch (error) {
+                idleMsg.textContent = "Error: Could not reach the backend engine.";
+                idleMsg.classList.remove('hidden');
+            } finally {
+                runBtn.textContent = 'Initialize Analysis';
+                runBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
