@@ -4,7 +4,7 @@ import base64
 
 app = Flask(__name__)
 
-# APNA HUGGING FACE TOKEN YAHAN DAALEIN
+# APNA HUGGING FACE TOKEN YAHAN DAALEIN (Bina kisi extra space ke)
 HF_API_TOKEN = "YOUR_HUGGING_FACE_TOKEN_HERE" 
 API_URL = "https://api-inference.huggingface.co/models/openai/clip-vit-base-patch32"
 headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
@@ -36,14 +36,12 @@ def classify_image():
         response = requests.post(API_URL, headers=headers, json=payload)
         results = response.json()
         
-        # 🔥 SAFE CHECK: Agar Hugging Face se koi error ya loading status aaye
         if isinstance(results, dict) and "error" in results:
             return jsonify({
                 "error": "AI Brain is warming up! Please wait 10-15 seconds and upload again.",
                 "details": results["error"]
             }), 503
             
-        # Agar response sahi hai (List format mein hai)
         best_match = results[0]
         predicted_text = best_match['label']
         confidence_score = round(best_match['score'] * 100, 1)
