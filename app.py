@@ -1,13 +1,13 @@
 from flask import Flask, render_template, request, jsonify
-from transformers import pipeline
-from PIL import Image
-import io
+import requests
+import base64
 
 app = Flask(__name__)
 
-# Yahan hum duniya ka sab se behtareen Zero-Shot Image model (CLIP) load kar rahe hain
-print("Loading Advanced Context AI (OpenAI CLIP)... (This may take a minute to download)")
-image_classifier = pipeline("zero-shot-image-classification", model="openai/clip-vit-base-patch32")
+# APNA HUGGING FACE TOKEN YAHAN DAALEIN
+HF_API_TOKEN = "YOUR_HUGGING_FACE_TOKEN_HERE" 
+API_URL = "https://api-inference.huggingface.co/models/openai/clip-vit-base-patch32"
+headers = {"Authorization": f"Bearer {HF_API_TOKEN}"}
 
 @app.route('/')
 def home():
@@ -19,30 +19,35 @@ def classify_image():
         return jsonify({"error": "No image uploaded"}), 400
         
     file = request.files['image']
+    image_bytes = file.read()
     
-    if file.filename == '':
-        return jsonify({"error": "No image selected"}), 400
-
     try:
-        image_bytes = file.read()
-        image = Image.open(io.BytesIO(image_bytes))
-        
-        # Hum AI ko apni marzi ki categories de rahe hain jin mein se usay chuna hai
         candidate_labels = [
             "liquid wastewater, flowing water, or fluid",
             "solid waste, plastic, metal, or solid object",
             "gas, smoke, exhaust, or vapor"
         ]
         
-        # AI tasveer ko in 3 categories mein judge karega
-        results = image_classifier(image, candidate_labels=candidate_labels)
+        payload = {
+            "inputs": base64.b64encode(image_bytes).decode('utf-8'),
+            "parameters": {"candidate_labels": candidate_labels}
+        }
         
-        # Sab se high probability wala result nikalna
+        response = requests.post(API_URL, headers=headers, json=payload)
+        results = response.json()
+        
+        # 🔥 SAFE CHECK: Agar Hugging Face se koi error ya loading status aaye
+        if isinstance(results, dict) and "error" in results:
+            return jsonify({
+                "error": "AI Brain is warming up! Please wait 10-15 seconds and upload again.",
+                "details": results["error"]
+            }), 503
+            
+        # Agar response sahi hai (List format mein hai)
         best_match = results[0]
         predicted_text = best_match['label']
         confidence_score = round(best_match['score'] * 100, 1)
         
-        # UI par dikhane ke liye khubsurat formatting
         if "liquid" in predicted_text:
             final_state = "Liquid Wastewater 💧"
         elif "gas" in predicted_text:
@@ -53,10 +58,11 @@ def classify_image():
         return jsonify({
             "label": final_state,
             "confidence": f"{confidence_score}%",
-            "message": "Context perfectly understood by Advanced AI!"
+            "message": "Analyzed successfully!"
         })
+        
     except Exception as e:
-        return jsonify({"error": "Error processing image."}), 500
+        return jsonify({"error": "Something went wrong on the server. Try again."}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8501)
+    app.run(debug=True)
